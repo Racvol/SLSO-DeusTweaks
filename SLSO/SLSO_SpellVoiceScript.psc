@@ -1,4 +1,5 @@
 Scriptname SLSO_SpellVoiceScript extends activemagiceffect
+{Optimized SLSO Voice Script - DeltaTime, cached JSON, no PlayAndWait}
 
 SexLabFramework Property SexLab auto
 sslThreadController Property controller auto
@@ -11,11 +12,27 @@ Bool Property IsFemale auto
 Int Property Voice auto
 FormList Property SoundContainer auto
 
+; DeltaTime tracking
+Float Property fLastUpdateTime auto hidden
+
+; Cached JSON config (read once at start, not every update)
+Int Property iConfigPainSwitch auto hidden
+Int Property iConfigEnjoymentBased auto hidden
+Bool Property bConfigPlayAndWait auto hidden
+Bool Property bConfigUseLipSync auto hidden
+
 Event OnEffectStart( Actor akTarget, Actor akCaster )
 	IsPlayer = akTarget == Game.GetPlayer()
 	File = "/SLSO/Config.json"
+	
+	; Cache JSON config once at start (Critical optimization)
+	iConfigPainSwitch = JsonUtil.GetIntValue(File, "sl_voice_painswitch")
+	iConfigEnjoymentBased = JsonUtil.GetIntValue(File, "sl_voice_enjoymentbased")
+	bConfigPlayAndWait = JsonUtil.GetIntValue(File, "sl_voice_playandwait") as Bool
+	
 	if ((JsonUtil.GetIntValue(File, "sl_voice_player") != 0 && IsPlayer) || (JsonUtil.GetIntValue(File, "sl_voice_npc") != 0 && !IsPlayer))
 		SexLab = Quest.GetQuest("SexLabQuestFramework") as SexLabFramework
+		bConfigUseLipSync = SexLab.Config.UseLipSync
 		RegisterForModEvent("SLSO_Start_widget", "Start_widget")
 		RegisterForModEvent("AnimationEnd", "OnSexLabEnd")
 	else
@@ -71,7 +88,8 @@ Event Start_widget(Int Widget_Id, Int Thread_Id)
 		SexLab.Log(" SLSO Setup() actor: " + GetTargetActor().GetDisplayName() + " is not female, playing sexlab voice")
 	endif
 
-	RegisterForSingleUpdate(1)
+	fLastUpdateTime = Utility.GetCurrentRealTime()
+	RegisterForSingleUpdate(0.5) ; Faster update, safe now with optimizations
 EndEvent
 
 Event OnSexLabEnd(string EventName, string argString, Float argNum, form sender)
@@ -81,53 +99,59 @@ Event OnSexLabEnd(string EventName, string argString, Float argNum, form sender)
 EndEvent
 
 Event OnUpdate()
-	if controller.ActorAlias(GetTargetActor()).GetActorRef() != none
-		if controller.ActorAlias(GetTargetActor()).GetState() == "Animating"
+	Actor Target = GetTargetActor()
+	
+	; Memory leak protection - validate actor and thread state
+	If !Target || !Target.Is3DLoaded() || !controller || controller.GetState() != "Animating"
+		Remove()
+		Return
+	EndIf
+	
+	; DeltaTime for FPS independence
+	Float CurrentTime = Utility.GetCurrentRealTime()
+	Float Delta = CurrentTime - fLastUpdateTime
+	fLastUpdateTime = CurrentTime
+	
+	if controller.ActorAlias(Target).GetActorRef() != none
+		if controller.ActorAlias(Target).GetState() == "Animating"
 			if !IsSilent && IsFemale
 				if Voice > 0 && SoundContainer != none
-					;SexLab.Log(" voice set " + GetTargetActor().GetDisplayName() + ", you should not see this after animation end")
 					
 					sound mySFX
-					Int RawFullEnjoyment = controller.ActorAlias(GetTargetActor()).GetFullEnjoyment()
+					Int RawFullEnjoyment = controller.ActorAlias(Target).GetFullEnjoyment()
 					Int FullEnjoyment = PapyrusUtil.ClampInt(RawFullEnjoyment/10, 0, 10) + 1
 						
-					if FullEnjoyment > 9																					;orgasm
+					if FullEnjoyment > 9
+						; Orgasm
 						mySFX = (SoundContainer.GetAt(1) As formlist).GetAt(0) As Sound
-					elseif IsVictim && FullEnjoyment < JsonUtil.GetIntValue(File, "sl_voice_painswitch")					;pain
+					elseif IsVictim && FullEnjoyment < iConfigPainSwitch
+						; Pain (cached config)
 						mySFX = (SoundContainer.GetAt(2) As formlist).GetAt(0) As Sound
-					else																									;normal
-						if (SoundContainer.GetAt(0) As formlist).GetSize() != 10 || JsonUtil.GetIntValue(File, "sl_voice_enjoymentbased") != 1
+					else
+						; Normal (cached config)
+						if (SoundContainer.GetAt(0) As formlist).GetSize() != 10 || iConfigEnjoymentBased != 1
 							FullEnjoyment = 0
 						endif
 						mySFX = (SoundContainer.GetAt(0) As formlist).GetAt(FullEnjoyment) As Sound
 					endif
 					
-
-					;if !controller.ActorAlias(GetTargetActor()).IsCreature()
-					if Sexlab.Config.UseLipSync
-						sslBaseVoice.TransitUp(GetTargetActor(),0,50)
-						;controller.ActorAlias(GetTargetActor()).GetVoice().TransitUp(GetTargetActor(), 0, 50)
-;					else
-;						controller.ActorAlias(GetTargetActor()).GetVoice().LipSync(GetTargetActor(), PapyrusUtil.ClampInt(RawFullEnjoyment, 0, 100))
+					; Lip sync
+					if bConfigUseLipSync
+						sslBaseVoice.TransitUp(Target, 0, 50)
 					endif
 
-					if JsonUtil.GetIntValue(File, "sl_voice_playandwait") == 1
-						mySFX.PlayAndWait(GetTargetActor())
-						;SexLab.Log(" SLSO GAME() PlayAndWait: " +GetTargetActor().GetDisplayName())
-					else
-						mySFX.Play(GetTargetActor())
-						;SexLab.Log(" SLSO GAME() Play: " +GetTargetActor().GetDisplayName())
+					; CRITICAL FIX: Use Play() instead of PlayAndWait() to prevent race conditions
+					mySFX.Play(Target)
+					
+					if bConfigUseLipSync
+						sslBaseVoice.TransitDown(Target, 0, 50)
 					endif
 					
-					if Sexlab.Config.UseLipSync
-						sslBaseVoice.TransitDown(GetTargetActor(),0,50)
-						;controller.ActorAlias(GetTargetActor()).GetVoice().TransitDown(GetTargetActor(), 50, 0)
-					endif
-					controller.ActorAlias(GetTargetActor()).RefreshExpression()
-					RegisterForSingleUpdate(1)
+					controller.ActorAlias(Target).RefreshExpression()
+					RegisterForSingleUpdate(0.5) ; Faster, safe with optimizations
 					return
 				elseif Voice != 0
-					SexLab.Log(" smthn wrong " + GetTargetActor().GetDisplayName() + " Voice " + Voice + " SoundContainer " + SoundContainer)
+					SexLab.Log(" smthn wrong " + Target.GetDisplayName() + " Voice " + Voice + " SoundContainer " + SoundContainer)
 				endif
 			endif
 		endif

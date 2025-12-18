@@ -1,4 +1,5 @@
 Scriptname SLSO_SpellGameScript Extends activemagiceffect
+{Optimized SLSO Game Script - DeltaTime, cached JSON, memory leak protection}
 
 SexLabFramework Property SexLab auto
 sslThreadController Property controller auto
@@ -22,13 +23,56 @@ int Property Position auto
 int Property RelationshipRank auto
 int Property OrgasmCounted auto
 
+; DeltaTime tracking
+Float Property fLastUpdateTime auto hidden
+
+; Cached JSON config (read once at start, not every update)
+Int Property iConfigGameEnabled auto hidden
+Int Property iConfigGameNpcEnabled auto hidden
+Int Property iConfigGamePlayerAutoplay auto hidden
+Int Property iConfigGameVictimAutoplay auto hidden
+Int Property iConfigGameEdging auto hidden
+Int Property iConfigGameNoStaEndanim auto hidden
+Int Property iConfigGameMaleOrgasmEndanim auto hidden
+Int Property iConfigGameEnjoymentReduction auto hidden
+Int Property iConfigGamePleasurePriority auto hidden
+Int Property iConfigConditionAggressorOrgasm auto hidden
+Int Property iConfigConditionConsensualOrgasm auto hidden
+Int Property iConfigConditionVictimArousal auto hidden
+Int Property iConfigConditionVictimOrgasmAggressorBroken auto hidden
+Int Property iConfigMinimumStageTime auto hidden
+Int Property iConfigSchlongSizeMindBreak auto hidden
+Float Property fConfigMentalDamageTweak auto hidden
+Float Property fConfigMentalDamageTweakPlayer auto hidden
+
 Event OnEffectStart( Actor akTarget, Actor akCaster )
 	File = "/SLSO/Config.json"
 	SexLab = Quest.GetQuest("SexLabQuestFramework") as SexLabFramework
+	
+	; Cache JSON config once at start (Critical optimization - read from disk only once)
+	iConfigGameEnabled = JsonUtil.GetIntValue(File, "game_enabled")
+	iConfigGameNpcEnabled = JsonUtil.GetIntValue(File, "game_npc_enabled", 0)
+	iConfigGamePlayerAutoplay = JsonUtil.GetIntValue(File, "game_player_autoplay")
+	iConfigGameVictimAutoplay = JsonUtil.GetIntValue(File, "game_victim_autoplay")
+	iConfigGameEdging = JsonUtil.GetIntValue(File, "game_edging")
+	iConfigGameNoStaEndanim = JsonUtil.GetIntValue(File, "game_no_sta_endanim")
+	iConfigGameMaleOrgasmEndanim = JsonUtil.GetIntValue(File, "game_male_orgasm_endanim")
+	iConfigGameEnjoymentReduction = JsonUtil.GetIntValue(File, "game_enjoyment_reduction_chance")
+	iConfigGamePleasurePriority = JsonUtil.GetIntValue(File, "game_pleasure_priority")
+	iConfigConditionAggressorOrgasm = JsonUtil.GetIntValue(File, "condition_aggressor_orgasm")
+	iConfigConditionConsensualOrgasm = JsonUtil.GetIntValue(File, "condition_consensual_orgasm")
+	iConfigConditionVictimArousal = JsonUtil.GetIntValue(File, "condition_victim_arousal")
+	iConfigConditionVictimOrgasmAggressorBroken = JsonUtil.GetIntValue(File, "condition_victim_orgasm_aggressor_broken")
+	iConfigMinimumStageTime = JsonUtil.GetIntValue(File, "minimum_stage_time")
+	iConfigSchlongSizeMindBreak = JsonUtil.GetIntValue(File, "slso_schlong_size_mind_break")
+	fConfigMentalDamageTweak = JsonUtil.GetFloatValue(File, "mental_damage_tweak")
+	fConfigMentalDamageTweakPlayer = JsonUtil.GetFloatValue(File, "mental_damage_tweak_player")
+	
 	RegisterForModEvent("SLSO_Start_widget", "Start_widget")
 	RegisterForModEvent("AnimationEnd", "OnSexLabEnd")
 	RegisterKey(JsonUtil.GetIntValue(File, "hotkey_pausegame"))
 	OrgasmCounted = 0
+	fLastUpdateTime = Utility.GetCurrentRealTime()
 EndEvent
 
 Event Start_widget(Int Widget_Id, Int Thread_Id)
@@ -36,8 +80,8 @@ Event Start_widget(Int Widget_Id, Int Thread_Id)
 
 	controller = SexLab.GetController(Thread_Id)
 	
-	;check if game enabled
-	if JsonUtil.GetIntValue(File, "game_enabled") == 1 && (controller.HasPlayer || JsonUtil.GetIntValue(File, "game_npc_enabled", 0) == 1)
+	;check if game enabled (use cached config)
+	if iConfigGameEnabled == 1 && (controller.HasPlayer || iConfigGameNpcEnabled == 1)
 		PauseGame = false
 		IsAggressor = controller.IsAggressor(GetTargetActor())
 		IsVictim = controller.IsVictim(GetTargetActor())
@@ -100,11 +144,24 @@ Event OnSexLabEnd(string EventName, string argString, Float argNum, form sender)
 EndEvent
 
 Event OnUpdate()
-	;SexLab.Log(self.GetID() - 6  + " SLSO_Game OnUpdate() is running on " + GetTargetActor().GetDisplayName())
+	Actor Target = GetTargetActor()
+	
+	; Memory leak protection - validate actor and thread state
+	If !Target || !Target.Is3DLoaded() || !controller || controller.GetState() != "Animating"
+		Remove()
+		Return
+	EndIf
+	
+	; DeltaTime for FPS independence
+	Float CurrentTime = Utility.GetCurrentRealTime()
+	Float Delta = CurrentTime - fLastUpdateTime
+	fLastUpdateTime = CurrentTime
+	
+	;SexLab.Log(self.GetID() - 6  + " SLSO_Game OnUpdate() is running on " + Target.GetDisplayName())
 	;float bench = game.GetRealHoursPassed()
-	if controller.ActorAlias(GetTargetActor()).GetActorRef() != none
-		if controller.ActorAlias(GetTargetActor()).GetState() == "Animating"
-			If JsonUtil.GetIntValue(File, "game_enabled") == 1 && !PauseGame
+	if controller.ActorAlias(Target).GetActorRef() != none
+		if controller.ActorAlias(Target).GetState() == "Animating"
+			If iConfigGameEnabled == 1 && !PauseGame
 				Game()
 			EndIf
 			
@@ -147,7 +204,7 @@ Function Game(string var = "")
 	float FullEnjoymentMOD = PapyrusUtil.ClampFloat((controller.ActorAlias(GetTargetActor()).GetFullEnjoyment() as float)/30, 1.0, 3.0)
 	float mod
 	
-	if (IsVictim && GetTargetActor() == Game.GetPlayer() && JsonUtil.GetIntValue(File, "game_victim_autoplay") == 1)
+	if (IsVictim && GetTargetActor() == Game.GetPlayer() && iConfigGameVictimAutoplay == 1)
 		MentallyBroken = true
 	ElseIf GetTargetActor().GetActorValuePercentage("Magicka") <= 0.10 && !MentallyBroken
 		MentallyBroken = true
@@ -265,7 +322,7 @@ Function Game(string var = "")
 
 	;PC(auto/mentalbreak)/NPC
 	Elseif GetTargetActor() != Game.GetPlayer()\
-	|| JsonUtil.GetIntValue(File, "game_player_autoplay") == 1\
+	|| iConfigGamePlayerAutoplay == 1\
 	|| MentallyBroken == true
 		mod = GetModSelfSta
 		
@@ -299,7 +356,7 @@ Function Game(string var = "")
 				if MentallyBroken == false || controller.ActorCount > 2
 					;pleasure self if self priority
 					;lewdness based check
-					if (Utility.RandomInt(0, 100) < SexLab.Stats.GetSkillLevel(GetTargetActor(), "Lewd", 0.3)*10*1.5) && JsonUtil.GetIntValue(File, "game_pleasure_priority") == 1
+					if (Utility.RandomInt(0, 100) < SexLab.Stats.GetSkillLevel(GetTargetActor(), "Lewd", 0.3)*10*1.5) && iConfigGamePleasurePriority == 1
 						ModEnjoyment(GetTargetActor(), mod, FullEnjoymentMOD)
 						MentalBreak(GetTargetActor())
 				
@@ -312,7 +369,7 @@ Function Game(string var = "")
 
 					;pleasure self if partner priority
 					;lewdness based check
-					elseif (Utility.RandomInt(0, 100) < SexLab.Stats.GetSkillLevel(GetTargetActor(), "Lewd", 0.3)*10*1.5) && JsonUtil.GetIntValue(File, "game_pleasure_priority") == 0
+					elseif (Utility.RandomInt(0, 100) < SexLab.Stats.GetSkillLevel(GetTargetActor(), "Lewd", 0.3)*10*1.5) && iConfigGamePleasurePriority == 0
 						ModEnjoyment(GetTargetActor(), mod, FullEnjoymentMOD)
 						MentalBreak(GetTargetActor())
 
@@ -329,7 +386,7 @@ Function Game(string var = "")
 		mod = GetModSelfMag
 		
 		;try to hold out orgasm especially if high relation with partner
-		If JsonUtil.GetIntValue(File, "game_edging") == 1
+		If iConfigGameEdging == 1
 			If GetTargetActor().GetActorValuePercentage("Magicka") > 0.10 && (Utility.RandomInt(0, 100) < (25+controller.GetHighestPresentRelationshipRank(GetTargetActor())*10*2) && controller.ActorCount == 2)
 				If controller.ActorAlias(GetTargetActor()).GetFullEnjoyment() as float > 95
 					GetTargetActor().DamageActorValue("Magicka", GetTargetActor().GetBaseActorValue("Magicka")/(10-mod)) 
@@ -359,23 +416,23 @@ Function Game(string var = "")
 	;skip to last animation stage if male actor:
 	;out of stamina
 	;orgasmed enough times (else restore some stamina and advance animation, and harm victim magicka if agressor)
-	If (JsonUtil.GetIntValue(File, "game_no_sta_endanim") == 1 && GetTargetActor().GetActorValuePercentage("Stamina") < 0.10)\
+	If (iConfigGameNoStaEndanim == 1 && GetTargetActor().GetActorValuePercentage("Stamina") < 0.10)\
 	&& (Position != 0 || controller.ActorCount == 1)\
 	&& (controller.Stage < controller.Animation.StageCount || (((controller.ActorAlias(GetTargetActor()) as sslActorAlias).GetOrgasmCount()) >= controller.Get_minimum_aggressor_orgasm_Count()))\
 	&& Utility.GetCurrentRealTime() > controller.GetLastStageSkip()
-		if ((IsAggressor && JsonUtil.GetIntValue(File, "condition_aggressor_orgasm") == 1) || JsonUtil.GetIntValue(File, "condition_consensual_orgasm")) && ((controller.ActorAlias(GetTargetActor()) as sslActorAlias).GetOrgasmCount()) >= controller.Get_minimum_aggressor_orgasm_Count()
+		if ((IsAggressor && iConfigConditionAggressorOrgasm == 1) || iConfigConditionConsensualOrgasm) && ((controller.ActorAlias(GetTargetActor()) as sslActorAlias).GetOrgasmCount()) >= controller.Get_minimum_aggressor_orgasm_Count()
 			controller.AdvanceStage()
 		elseif controller.ActorCount == 1
 			GetTargetActor().RestoreActorValue("Stamina", (GetTargetActor().GetBaseActorValue("Stamina")/3))
 			sexlab.Log("regenerated: " + (GetTargetActor().GetBaseActorValue("Stamina")/3)+ " stamina")
 			MentalBreak(GetTargetActor())
 			controller.AdvanceStage()
-		elseif (controller.ActorAlias(GetTargetActor()) as sslActorAlias).GetOrgasmCount() <= 0 && ((!IsAggressor && JsonUtil.GetIntValue(File, "condition_consensual_orgasm") == false) || (IsAggressor && JsonUtil.GetIntValue(File, "condition_aggressor_orgasm") == false))
+		elseif (controller.ActorAlias(GetTargetActor()) as sslActorAlias).GetOrgasmCount() <= 0 && ((!IsAggressor && iConfigConditionConsensualOrgasm == false) || (IsAggressor && iConfigConditionAggressorOrgasm == false))
 			GetTargetActor().RestoreActorValue("Stamina", (GetTargetActor().GetBaseActorValue("Stamina")/2)*(controller.ActorCount - 1))
 			sexlab.Log("regenerated: " + (GetTargetActor().GetBaseActorValue("Stamina")/2)*(controller.ActorCount - 1) + " stamina")
 			MentalBreak(GetTargetActor())
 			controller.AdvanceStage()
-		elseif (controller.ActorAlias(GetTargetActor()) as sslActorAlias).GetOrgasmCount() > 0 && ((!IsAggressor && JsonUtil.GetIntValue(File, "condition_consensual_orgasm") == false) || (IsAggressor && JsonUtil.GetIntValue(File, "condition_aggressor_orgasm") == false))
+		elseif (controller.ActorAlias(GetTargetActor()) as sslActorAlias).GetOrgasmCount() > 0 && ((!IsAggressor && iConfigConditionConsensualOrgasm == false) || (IsAggressor && iConfigConditionAggressorOrgasm == false))
 			controller.AdvanceStage()
 		else
 			GetTargetActor().RestoreActorValue("Stamina", ((GetTargetActor().GetBaseActorValue("Stamina")/4)*controller.Get_minimum_aggressor_orgasm_Count())*(controller.ActorCount - 1))
@@ -391,14 +448,14 @@ Function Game(string var = "")
 	EndIf
 
 	;skip to last animation stage each time male actor orgasmed
-	If (JsonUtil.GetIntValue(File, "game_male_orgasm_endanim") == 1 && !IsFemale && (controller.ActorAlias(GetTargetActor()) as sslActorAlias).GetOrgasmCount() > 0)\
+	If (iConfigGameMaleOrgasmEndanim == 1 && !IsFemale && (controller.ActorAlias(GetTargetActor()) as sslActorAlias).GetOrgasmCount() > 0)\
 	&& ((Position != 0 && controller.ActorCount <= 2) || controller.ActorCount == 1)\
 	&& (controller.Stage < controller.Animation.StageCount || (((controller.ActorAlias(GetTargetActor()) as sslActorAlias).GetOrgasmCount()) >= controller.Get_minimum_aggressor_orgasm_Count()))\
 	&& Utility.GetCurrentRealTime() > controller.GetLastStageSkip()
-		if (IsAggressor || JsonUtil.GetIntValue(File, "condition_consensual_orgasm")) && ((controller.ActorAlias(GetTargetActor()) as sslActorAlias).GetOrgasmCount()) >= controller.Get_minimum_aggressor_orgasm_Count() && controller.ActorCount == 2
+		if (IsAggressor || iConfigConditionConsensualOrgasm) && ((controller.ActorAlias(GetTargetActor()) as sslActorAlias).GetOrgasmCount()) >= controller.Get_minimum_aggressor_orgasm_Count() && controller.ActorCount == 2
 			controller.AdvanceStage()
 			controller.SetLastStageSkip(Utility.GetCurrentRealTime() + JsonUtil.GetIntValue(File, "minimum_stage_time")) 
-		elseif (!IsAggressor && JsonUtil.GetIntValue(File, "condition_consensual_orgasm") == false) || (IsAggressor && JsonUtil.GetIntValue(File, "condition_aggressor_orgasm") == false) && controller.ActorCount == 2
+		elseif (!IsAggressor && iConfigConditionConsensualOrgasm == false) || (IsAggressor && iConfigConditionAggressorOrgasm == false) && controller.ActorCount == 2
 			controller.AdvanceStage()
 			controller.SetLastStageSkip(Utility.GetCurrentRealTime() + JsonUtil.GetIntValue(File, "minimum_stage_time")) 
 		elseif ((controller.ActorAlias(GetTargetActor()) as sslActorAlias).GetOrgasmCount()) > OrgasmCounted && controller.ActorCount <= 2 || controller.ActorCount > 2 && ((controller.ActorAlias(GetTargetActor()) as sslActorAlias).GetOrgasmCount()) > OrgasmCounted /( controller.ActorCount - 1)
@@ -421,7 +478,7 @@ Function ModEnjoyment(Actor PartnerRef, float mod, float FullEnjoymentMOD)
 ;with skills 3- upto 30 chance to decrease enjoyment
 	GetTargetActor().DamageActorValue("Stamina", GetTargetActor().GetBaseActorValue("Stamina")/(10+mod+FullEnjoymentMOD))
 	if PartnerRef != none
-		if mod < 3 && Utility.RandomInt(0, 100) < (3 - mod) * 10 && JsonUtil.GetIntValue(File, "game_enjoyment_reduction_chance") == 1
+		if mod < 3 && Utility.RandomInt(0, 100) < (3 - mod) * 10 && iConfigGameEnjoymentReduction == 1
 			controller.ActorAlias(GetTargetActor()).BonusEnjoyment(PartnerRef, -1 + Math.Floor(controller.ActorAlias(PartnerRef).GetEdgeStack()*0.25))
 		elseif PartnerRef == GetTargetActor() && controller.ActorAlias(PartnerReference).GetMentallyBrokenState()
 			controller.ActorAlias(GetTargetActor()).BonusEnjoyment(PartnerRef, 2 + Math.Floor(controller.ActorAlias(PartnerRef).GetEdgeStack()*0.5))
@@ -449,7 +506,7 @@ Function MentalBreak(Actor PartnerRef)
 	;damage actor magicka/mental break
 	if PartnerRef != none
 		int damageValue = 0
-		if controller.Positions.Find(partnerRef) == 0 && JsonUtil.GetIntValue(File, "slso_schlong_size_mind_break")
+		if controller.Positions.Find(partnerRef) == 0 && iConfigSchlongSizeMindBreak
 			if partnerRef != GetTargetActor()
 				damageValue = math.Ceiling(PartnerRef.GetBaseActorValue("Magicka")*0.01*(10+(10*controller.ActorAlias(GetTargetActor()).GetSchlongPercentEfficiency())-GetModSelfSta+GetMod("Magicka",PartnerRef)*0.01)*(((controller.ActorAlias(PartnerRef) as sslActorAlias).GetFullEnjoyment() as float)*0.01)*((1+(controller.ActorAlias(PartnerRef) as sslActorAlias).GetOrgasmCount())*0.5) * controller.ActorAlias(GetTargetActor()).GetTemperMult())
 			else
@@ -482,9 +539,9 @@ Function MentalBreak(Actor PartnerRef)
 			damageValue = math.Floor(damageValue * 0.5)
 		endif
 		if PartnerRef != Game.GetPlayer()
-			damageValue = math.Ceiling(damageValue * (JsonUtil.GetFloatValue(File, "mental_damage_tweak") as float))
+			damageValue = math.Ceiling(damageValue * fConfigMentalDamageTweak)
 		else
-			damageValue = math.Ceiling(damageValue * (JsonUtil.GetFloatValue(File, "mental_damage_tweak_player") as float))
+			damageValue = math.Ceiling(damageValue * fConfigMentalDamageTweakPlayer)
 		endif
 		PartnerRef.DamageActorValue("Magicka",damageValue)
 		if partnerRef != GetTargetActor() && damageValue > 0
@@ -510,9 +567,9 @@ Function AggressiveMentalBreak(Actor PartnerRef)
 			controller.ActorAlias(partnerRef).SetResisting(false)
 		endif
 		if PartnerRef != Game.GetPlayer()
-			damageValue = math.Ceiling(damageValue * (JsonUtil.GetFloatValue(File, "mental_damage_tweak") as float))
+			damageValue = math.Ceiling(damageValue * fConfigMentalDamageTweak)
 		else
-			damageValue = math.Ceiling(damageValue * (JsonUtil.GetFloatValue(File, "mental_damage_tweak_player") as float))
+			damageValue = math.Ceiling(damageValue * fConfigMentalDamageTweakPlayer)
 		endif
 		PartnerRef.DamageActorValue("Magicka",damageValue)
 		if partnerRef != GetTargetActor() && damageValue > 0

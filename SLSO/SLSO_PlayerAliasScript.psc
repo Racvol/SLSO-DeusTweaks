@@ -1,9 +1,20 @@
 scriptname SLSO_PlayerAliasScript extends ReferenceAlias
-{SLSO_PlayerAliasScript script}
+{SLSO_PlayerAliasScript script - Optimized with cached FormLists}
 
 int Player_orgasms_count
 int Player_bonusenjoyment
 String File
+
+; Cached FormLists (instead of GetFormFromFile every time)
+FormList Property SLSO_VoicePacksContainer Auto ; 0x535D
+FormList Property SLSO_VoicePacksNamesContainer Auto ; 0x63A3
+FormList Property SLSO_VictimVoicePacksContainer Auto ; 0x7935
+FormList Property SLSO_VictimVoicePacksNamesContainer Auto ; 0x7938
+
+FormList _normalVoices
+FormList _normalVoiceNames
+FormList _victimVoices
+FormList _victimVoiceNames
 
 ;=============================================================
 ;INIT
@@ -24,6 +35,20 @@ function Maintenance()
 		return
 	endif
 	
+	; Initialize cached FormLists (read once instead of GetFormFromFile every call)
+	if !_normalVoices && SLSO_VoicePacksContainer
+		_normalVoices = SLSO_VoicePacksContainer.GetAt(1) as FormList
+	endif
+	if !_normalVoiceNames && SLSO_VoicePacksNamesContainer
+		_normalVoiceNames = SLSO_VoicePacksNamesContainer.GetAt(1) as FormList
+	endif
+	if !_victimVoices && SLSO_VictimVoicePacksContainer
+		_victimVoices = SLSO_VictimVoicePacksContainer.GetAt(1) as FormList
+	endif
+	if !_victimVoiceNames && SLSO_VictimVoicePacksNamesContainer
+		_victimVoiceNames = SLSO_VictimVoicePacksNamesContainer.GetAt(1) as FormList
+	endif
+	
 	;register events
 	self.RegisterForModEvent("SexLabOrgasmSeparate", "Orgasm")
 	self.RegisterForModEvent("AnimationStart", "OnSexLabStart")
@@ -33,13 +58,15 @@ function Maintenance()
 	
 	Clear()
 	
-	;check and reset normal voices if needed
-	if	((Game.GetFormFromFile(0x535D, "SLSO.esp") as formlist).GetAt(1) as formlist).GetSize() > 0
+	;check and reset normal voices if needed (use cached FormLists)
+	if _normalVoices && _normalVoices.GetSize() > 0
 		int i = 0
-		while i < ((Game.GetFormFromFile(0x535D, "SLSO.esp") as formlist).GetAt(1) as formlist).GetSize()
-			if ((Game.GetFormFromFile(0x535D, "SLSO.esp") as formlist).GetAt(1) as formlist).GetAt(i) == none
-				((Game.GetFormFromFile(0x535D, "SLSO.esp") as formlist).GetAt(1) as formlist).Revert()
-				((Game.GetFormFromFile(0x63A3, "SLSO.esp") as formlist).GetAt(1) as formlist).Revert()
+		while i < _normalVoices.GetSize()
+			if _normalVoices.GetAt(i) == none
+				_normalVoices.Revert()
+				if _normalVoiceNames
+					_normalVoiceNames.Revert()
+				endif
 				JsonUtil.SetIntValue(File, "sl_voice_player", 0)
 				JsonUtil.SetIntValue(File, "sl_voice_npc", 0)
 				return
@@ -48,15 +75,15 @@ function Maintenance()
 		endwhile
 	endif
 	
-	;check and reset victim voices if needed
-	if	((Game.GetFormFromFile(0x7935, "SLSO.esp") as formlist).GetAt(1) as formlist).GetSize() > 0
+	;check and reset victim voices if needed (use cached FormLists)
+	if _victimVoices && _victimVoices.GetSize() > 0
 		int i = 0
-		while i < ((Game.GetFormFromFile(0x7935, "SLSO.esp") as formlist).GetAt(1) as formlist).GetSize()
-			if ((Game.GetFormFromFile(0x7935, "SLSO.esp") as formlist).GetAt(1) as formlist).GetAt(i) == none
-				((Game.GetFormFromFile(0x7935, "SLSO.esp") as formlist).GetAt(1) as formlist).Revert()
-				((Game.GetFormFromFile(0x7938, "SLSO.esp") as formlist).GetAt(1) as formlist).Revert()
-				;JsonUtil.SetIntValue(File, "sl_voice_player", 0)
-				;JsonUtil.SetIntValue(File, "sl_voice_npc", 0)
+		while i < _victimVoices.GetSize()
+			if _victimVoices.GetAt(i) == none
+				_victimVoices.Revert()
+				if _victimVoiceNames
+					_victimVoiceNames.Revert()
+				endif
 				return
 			endif
 		i = i + 1
