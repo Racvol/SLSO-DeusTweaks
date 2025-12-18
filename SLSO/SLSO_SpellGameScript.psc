@@ -44,6 +44,19 @@ Int Property iConfigMinimumStageTime auto hidden
 Int Property iConfigSchlongSizeMindBreak auto hidden
 Float Property fConfigMentalDamageTweak auto hidden
 Float Property fConfigMentalDamageTweakPlayer auto hidden
+; Cached hotkeys
+Int Property iKeyPauseGame auto hidden
+Int Property iKeyEdge auto hidden
+Int Property iKeyOrgasm auto hidden
+Int Property iKeyBonusEnjoyment auto hidden
+Int Property iKeyResist auto hidden
+Int Property iKeyDisplayMode auto hidden
+Int Property iKeySelectActor1 auto hidden
+Int Property iKeySelectActor2 auto hidden
+Int Property iKeySelectActor3 auto hidden
+Int Property iKeySelectActor4 auto hidden
+Int Property iKeySelectActor5 auto hidden
+Int Property iKeyUtility auto hidden
 
 Event OnEffectStart( Actor akTarget, Actor akCaster )
 	File = "/SLSO/Config.json"
@@ -67,10 +80,24 @@ Event OnEffectStart( Actor akTarget, Actor akCaster )
 	iConfigSchlongSizeMindBreak = JsonUtil.GetIntValue(File, "slso_schlong_size_mind_break")
 	fConfigMentalDamageTweak = JsonUtil.GetFloatValue(File, "mental_damage_tweak")
 	fConfigMentalDamageTweakPlayer = JsonUtil.GetFloatValue(File, "mental_damage_tweak_player")
+
+	; Cache hotkeys once
+	iKeyPauseGame = JsonUtil.GetIntValue(File, "hotkey_pausegame")
+	iKeyEdge = JsonUtil.GetIntValue(File, "hotkey_edge")
+	iKeyOrgasm = JsonUtil.GetIntValue(File, "hotkey_orgasm")
+	iKeyBonusEnjoyment = JsonUtil.GetIntValue(File, "hotkey_bonusenjoyment")
+	iKeyResist = JsonUtil.GetIntValue(File, "hotkey_resist")
+	iKeyDisplayMode = JsonUtil.GetIntValue(File, "hotkey_display_mode")
+	iKeySelectActor1 = JsonUtil.GetIntValue(File, "hotkey_select_actor_1")
+	iKeySelectActor2 = JsonUtil.GetIntValue(File, "hotkey_select_actor_2")
+	iKeySelectActor3 = JsonUtil.GetIntValue(File, "hotkey_select_actor_3")
+	iKeySelectActor4 = JsonUtil.GetIntValue(File, "hotkey_select_actor_4")
+	iKeySelectActor5 = JsonUtil.GetIntValue(File, "hotkey_select_actor_5")
+	iKeyUtility = JsonUtil.GetIntValue(File, "hotkey_utility")
 	
 	RegisterForModEvent("SLSO_Start_widget", "Start_widget")
 	RegisterForModEvent("AnimationEnd", "OnSexLabEnd")
-	RegisterKey(JsonUtil.GetIntValue(File, "hotkey_pausegame"))
+	RegisterKey(iKeyPauseGame)
 	OrgasmCounted = 0
 	fLastUpdateTime = Utility.GetCurrentRealTime()
 EndEvent
@@ -107,17 +134,17 @@ Event Start_widget(Int Widget_Id, Int Thread_Id)
 		Change_Partner()
 		
 		if controller.ActorAlias(GetTargetActor()).GetActorRef() == Game.GetPlayer()
-;			SexLab.Log(" SLSO Setup() Player, enabling hotkeys")
-			RegisterKey(JsonUtil.GetIntValue(File, "hotkey_edge"))
-			RegisterKey(JsonUtil.GetIntValue(File, "hotkey_orgasm"))
-			RegisterKey(JsonUtil.GetIntValue(File, "hotkey_bonusenjoyment"))
-			RegisterKey(JsonUtil.GetIntValue(File, "hotkey_resist"))
-			RegisterKey(JsonUtil.GetIntValue(File, "hotkey_display_mode"))
-			RegisterKey(JsonUtil.GetIntValue(File, "hotkey_select_actor_1"))
-			RegisterKey(JsonUtil.GetIntValue(File, "hotkey_select_actor_2"))
-			RegisterKey(JsonUtil.GetIntValue(File, "hotkey_select_actor_3"))
-			RegisterKey(JsonUtil.GetIntValue(File, "hotkey_select_actor_4"))
-			RegisterKey(JsonUtil.GetIntValue(File, "hotkey_select_actor_5"))
+; 		SexLab.Log(" SLSO Setup() Player, enabling hotkeys")
+			RegisterKey(iKeyEdge)
+			RegisterKey(iKeyOrgasm)
+			RegisterKey(iKeyBonusEnjoyment)
+			RegisterKey(iKeyResist)
+			RegisterKey(iKeyDisplayMode)
+			RegisterKey(iKeySelectActor1)
+			RegisterKey(iKeySelectActor2)
+			RegisterKey(iKeySelectActor3)
+			RegisterKey(iKeySelectActor4)
+			RegisterKey(iKeySelectActor5)
 		endif
 		;Estrus, increase enjoyment
 		if controller.Animation.HasTag("Estrus")\
@@ -677,7 +704,7 @@ EndFunction
 Event OnKeyDown(int keyCode)
 	if !Utility.IsInMenuMode()
 		if controller.ActorAlias(GetTargetActor()).GetActorRef() != none
-			If JsonUtil.GetIntValue(File, "hotkey_pausegame") == keyCode && Input.IsKeyPressed(JsonUtil.GetIntValue(File, "hotkey_utility"))
+			If iKeyPauseGame == keyCode && Input.IsKeyPressed(iKeyUtility)
 				if PauseGame
 					PauseGame = false
 					Debug.Notification("SLSO game paused: " + PauseGame)
@@ -685,35 +712,35 @@ Event OnKeyDown(int keyCode)
 					PauseGame = true
 					Debug.Notification("SLSO game paused: " + PauseGame)
 				endif
-			ElseIf JsonUtil.GetIntValue(File, "game_enabled") == 1
+			ElseIf iConfigGameEnabled == 1
 				;Debug.Notification("SLSO OnKeyDown : " + keyCode)
-				If JsonUtil.GetIntValue(File, "hotkey_bonusenjoyment") == keyCode
+				If iKeyBonusEnjoyment == keyCode
 					Game("Stamina")
-;				ElseIf JsonUtil.GetIntValue(File, "hotkey_orgasm") == keyCode
-;					if Input.IsKeyPressed(JsonUtil.GetIntValue(File, "hotkey_utility"))
+;				ElseIf iKeyOrgasm == keyCode
+;					if Input.IsKeyPressed(iKeyUtility)
 ;						controller.ActorAlias(GetTargetActor()).Orgasm(0)		;normal orgasm, >90 enjoyment
 ;					endif
-;				ElseIf JsonUtil.GetIntValue(File, "hotkey_orgasm") == keyCode
-;					if Input.IsKeyPressed(JsonUtil.GetIntValue(File, "hotkey_utility"))
+;				ElseIf iKeyOrgasm == keyCode
+;					if Input.IsKeyPressed(iKeyUtility)
 ;						controller.ActorAlias(GetTargetActor()).Orgasm(-2)		;forced orgasm, skip slso checks
 ;					endif
-				ElseIf JsonUtil.GetIntValue(File, "hotkey_edge") == keyCode
+				ElseIf iKeyEdge == keyCode
 					Game("Magicka")
-				ElseIf JsonUtil.GetIntValue(File, "hotkey_resist") == keyCode
+				ElseIf iKeyResist == keyCode
 					Game("Resolve")
-				ElseIf JsonUtil.GetIntValue(File, "hotkey_display_mode") == keyCode
+				ElseIf iKeyDisplayMode == keyCode
 					Change_Display()
-				ElseIf Input.IsKeyPressed(JsonUtil.GetIntValue(File, "hotkey_utility"))
+				ElseIf Input.IsKeyPressed(iKeyUtility)
 					;If !IsVictim
-						If JsonUtil.GetIntValue(File, "hotkey_select_actor_1") == keyCode
+						If iKeySelectActor1 == keyCode
 							Change_Partner(1)
-						ElseIf JsonUtil.GetIntValue(File, "hotkey_select_actor_2") == keyCode
+						ElseIf iKeySelectActor2 == keyCode
 							Change_Partner(2)
-						ElseIf JsonUtil.GetIntValue(File, "hotkey_select_actor_3") == keyCode
+						ElseIf iKeySelectActor3 == keyCode
 							Change_Partner(3)
-						ElseIf JsonUtil.GetIntValue(File, "hotkey_select_actor_4") == keyCode
+						ElseIf iKeySelectActor4 == keyCode
 							Change_Partner(4)
-						ElseIf JsonUtil.GetIntValue(File, "hotkey_select_actor_5") == keyCode
+						ElseIf iKeySelectActor5 == keyCode
 							Change_Partner(5)
 						EndIf
 					;EndIf
