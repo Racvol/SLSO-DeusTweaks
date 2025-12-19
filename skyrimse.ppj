@@ -1,0 +1,29 @@
+<?xml version='1.0'?><!-- Game is either sse, tesv, or fo4 -->
+<PapyrusProject
+    Flags="TESV_Papyrus_Flags.flg" 
+    Game="sse" 
+    Output="Scripts" 
+    Optimize="false" 
+    Release="false" 
+    Final="false">
+    <Imports>
+        <Import>E:\DeusForge\SkyrimAE\SLSO DeusTweaks\Scripts\Source</Import>       
+        <Import>E:\DeusForge\SkyrimAE\SLSO DeusTweaks\PapyrusSources\SRC_OSLAroused</Import>
+        <Import>E:\DeusForge\SkyrimAE\SLSO DeusTweaks\PapyrusSources\SRC_XPMSE</Import>
+        <Import>E:\DeusForge\SkyrimAE\SLSO DeusTweaks\PapyrusSources\SRC_FNIS</Import>
+        <Import>E:\DeusForge\SkyrimAE\SLSO DeusTweaks\PapyrusSources\SRC_SOS</Import>
+        <Import>E:\DeusForge\SkyrimAE\SLSO DeusTweaks\PapyrusSources\SRC_SLUtilityPlus</Import>
+        <Import>E:\DeusForge\SkyrimAE\SLSO DeusTweaks\PapyrusSources\SRC_SL166b</Import>
+        <Import>E:\DeusForge\SkyrimAE\SLSO DeusTweaks\PapyrusSources\SRC_OStim</Import>
+        <Import>.\PapyrusSources\SRC_ConsoleUtil</Import>
+        <Import>.\PapyrusSources\SRC_MfgFix</Import>
+        <Import>.\PapyrusSources\SRC_RaceMenu</Import>
+        <Import>.\PapyrusSources\SRC_SkyUI</Import>
+        <Import>.\PapyrusSources\SRC_PO3</Import>
+        <Import>.\PapyrusSources\SRC_JContainers</Import>
+        <Import>D:\Games\The Elder Scrolls V - Skyrim\Data\Scripts\Source</Import>
+    </Imports>
+    <Folders>
+        <Folder>.\Scripts\Source</Folder>
+    </Folders>
+</PapyrusProject>

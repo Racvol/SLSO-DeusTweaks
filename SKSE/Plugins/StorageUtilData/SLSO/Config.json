@@ -1,0 +1,139 @@
+{
+	"float" : 
+	{
+		"sl_enjoymentrate_female" : 1,
+		"sl_enjoymentrate_male" : 1,
+		"sl_estrusforcedenjoyment" : 2,
+		"widget_backgroundalpha" : 50,
+		"widget_borderalpha" : 50,
+		"widget_height" : 25,
+		"widget_labelcolor" : 16777215,
+		"widget_labeltextsize" : 20,
+		"widget_meteralpha" : 100,
+		"widget_meterscale" : 50,
+		"widget_selectedactorcolor" : 16768768,
+		"widget_valuetextsize" : 20,
+		"widget_width" : 290
+	},
+	"int" : 
+	{
+		"condition_aggressor_change_animation" : 1,
+		"condition_aggressor_orgasm" : 1,
+		"condition_arousal_aggressor_orgasm" : 1,
+		"condition_arousal_consensual_orgasm" : 1,
+		"condition_chance_minimum_aggressor_orgasm_increase" : 60,
+		"condition_ddbelt_orgasm" : 0,
+		"condition_female_orgasm" : 1,
+		"condition_female_orgasm_bonus" : 0,
+		"condition_futa_orgasm" : 1,
+		"condition_leadin_orgasm" : 0,
+		"condition_male_orgasm" : 1,
+		"condition_male_orgasm_penalty" : 1,
+		"condition_maximum_aggressor_orgasm" : 100,
+		"condition_minimum_aggressor_orgasm" : 15,
+		"condition_player_aggressor_orgasm" : 0,
+		"condition_player_orgasm" : 1,
+		"condition_victim_arousal" : 2,
+		"condition_victim_orgasm" : 2,
+		"game_animation_speed_control" : 2,
+		"game_animation_speed_control_actorsync" : 2,
+		"game_animation_speed_control_base" : 50,
+		"game_animation_speed_control_max" : 150,
+		"game_animation_speed_control_min" : 0,
+		"game_edging" : 1,
+		"game_enabled" : 1,
+		"game_enjoyment_reduction_chance" : 0,
+		"game_male_orgasm_endanim" : 1,
+		"game_no_sta_endanim" : 0,
+		"game_npc_enabled" : 1,
+		"game_passive_enjoyment_reduction" : 0,
+		"game_player_autoplay" : 0,
+		"game_pleasure_priority" : 1,
+		"game_scriptupdate_boost" : 1,
+		"hotkey_bonusenjoyment" : 256,
+		"hotkey_edge" : 257,
+		"hotkey_orgasm" : 258,
+		"hotkey_select_actor_1" : 2,
+		"hotkey_select_actor_2" : 3,
+		"hotkey_select_actor_3" : 4,
+		"hotkey_select_actor_4" : 5,
+		"hotkey_select_actor_5" : 6,
+		"hotkey_utility" : 42,
+		"hotkey_widget" : 45,
+		"minimum_stage_time" : 20,
+		"sl_agressor_bonus_enjoyment" : 1,
+		"sl_default_always_orgasm" : 0,
+		"sl_exhibitionist" : 1,
+		"sl_hot_voice_strength" : 90,
+		"sl_masturbation" : 1,
+		"sl_multiorgasmchance" : 25,
+		"sl_multiorgasmchance_curve" : 10,
+		"sl_multiorgasmchance_male" : 100,
+		"sl_npcscene_always_orgasm" : 0,
+		"sl_passive_enjoyment" : 1,
+		"sl_sla_arousal" : 3,
+		"sl_sla_orgasmexposureloss" : -20,
+		"sl_sla_orgasmexposuremodifier" : 3,
+		"sl_sla_stage_arousal" : 1,
+		"sl_stage_enjoyment" : 0,
+		"sl_voice_enjoymentbased" : 1,
+		"sl_voice_npc" : 0,
+		"sl_voice_painswitch" : 8,
+		"sl_voice_playandwait" : 1,
+		"sl_voice_player" : 0,
+		"slso_creature_size_bonus" : 1,
+		"slso_schlong_size_mind_break" : 1,
+		"slso_schlong_size_oral_bonus" : 1,
+		"widget_enabled" : 1,
+		"widget_player_only" : 0,
+		"widget_show_enjoymentmodifier" : 1
+	},
+	"string" : {},
+	"stringList" : 
+	{
+		"widget1" : 
+		[
+			"on",
+			"100.000000",
+			"270.000000",
+			"right"
+		],
+		"widget2" : 
+		[
+			"on",
+			"100.000000",
+			"330.000000",
+			"right"
+		],
+		"widget3" : 
+		[
+			"on",
+			"100.000000",
+			"390.000000",
+			"right"
+		],
+		"widget4" : 
+		[
+			"on",
+			"100.000000",
+			"450.000000",
+			"right"
+		],
+		"widget5" : 
+		[
+			"on",
+			"100.000000",
+			"510.000000",
+			"right"
+		],
+		"widgetcolors" : 
+		[
+			"0",
+			"13369395",
+			"14905890",
+			"15379200",
+			"4219055",
+			"15231909"
+		]
+	}
+}

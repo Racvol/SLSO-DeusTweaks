@@ -1,45 +1,63 @@
-# Visual Studio / IDE
+## IDE / editor
 .vscode/
 .idea/
+
+## Visual Studio
 *.suo
 *.user
 *.userprefs
 *.sln
 *.db
 
-# Build outputs
+## Build artifacts
+build/
 bin/
 obj/
-build/
 dist/
+.papyrus/
 
-# Papyrus/pyro/build artifacts
+## xmake
+.xmake/
+
+## CMake generated files
+CMakeFiles/
+CMakeCache.txt
+CMakePresets.json
+CMakeUserPresets.json
+CMakeLists.txt.user
+
+## vcpkg artifacts (local installs/buildtrees)
+/vcpkg_installed/
+/vcpkg/
+vcpkg_installed/
+packages/
+
+## CommonLibSSE duplicate in root (if using the subproject copy)
+extern
+
+## Papyrus / pyro
 *.pex
 *.psc.bak
 *.psc~
-*.log
-*.cache
+.pyro/
+pyro-output/
 
-# OS files
+## OS files
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Temp
+## Temp
 *.tmp
 *.swp
 *~
 
-# Pyro / papyrus tool directories
-.pyro/
-pyro-output/
-
-# Secrets / local env
+## Secrets
 .env
 
-# Other
+## Archives
 *.zip
 *.7z
 
-# Keep workspace file (optional)
-# SkyrimSE.code-workspace
+## Keep native plugin DLLs in SKSE/Plugins
+!SKSE/Plugins/*.dll
