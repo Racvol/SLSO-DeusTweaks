@@ -1,0 +1,45 @@
+# Visual Studio / IDE
+.vscode/
+.idea/
+*.suo
+*.user
+*.userprefs
+*.sln
+*.db
+
+# Build outputs
+bin/
+obj/
+build/
+dist/
+
+# Papyrus/pyro/build artifacts
+*.pex
+*.psc.bak
+*.psc~
+*.log
+*.cache
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temp
+*.tmp
+*.swp
+*~
+
+# Pyro / papyrus tool directories
+.pyro/
+pyro-output/
+
+# Secrets / local env
+.env
+
+# Other
+*.zip
+*.7z
+
+# Keep workspace file (optional)
+# SkyrimSE.code-workspace
