@@ -1,0 +1,4 @@
+[submodule "SLSO_TrueHUD_Bridge/extern/CommonLibSSE-NG"]
+	path = SLSO_TrueHUD_Bridge/extern/CommonLibSSE-NG
+	url = https://github.com/alandtse/CommonLibVR.git
+	branch = ng
