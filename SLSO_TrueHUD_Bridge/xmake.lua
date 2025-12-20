@@ -10,8 +10,6 @@ option_end()
 includes("extern/CommonLibSSE-NG")
 -- Add SimpleIni as a dependency via xmake package manager
 add_requires("simpleini")
--- Add xbyak (used by some TrueHUD hooks) if available
-add_requires("xbyak")
 
 target("SLSO_TrueHUD_Bridge")
     set_kind("shared")
@@ -19,9 +17,6 @@ target("SLSO_TrueHUD_Bridge")
     add_files("src/**.cpp")
     add_includedirs("include", "extern/CommonLibSSE-NG/include", "src/TrueHUD", {public = true})
     add_deps("commonlibsse-ng")
-    add_defines("SKSE_SUPPORT_XBYAK=1")
-    -- link xbyak package (header-only)
-    add_packages("xbyak")
     -- Use unified PCH so TrueHUD headers are covered
     set_pcxxheader("src/PCH.h")
     -- Link the simpleini package (header-only)

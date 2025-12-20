@@ -5,7 +5,7 @@
 #include "ModAPI.h"
 
 #pragma warning(disable: 4702)
-#include <xbyak/xbyak.h>
+
 
 namespace Hooks
 {
@@ -267,31 +267,8 @@ namespace Hooks
 
 	void HUDHook::FlashHUDStaminaMountHook()
 	{
-		static REL::Relocation<uintptr_t> hook{ RELOCATION_ID(36994, 38022) };  // 60E820, 636870
-
-		struct Patch : Xbyak::CodeGenerator
-		{
-			explicit Patch(uintptr_t a_funcAddr) {
-				Xbyak::Label funcLabel;
-
-				mov(rcx, rdi);
-				call(ptr[rip + funcLabel]);
-				cmp(rax, true);
-
-				jmp(ptr[rip]);
-				dq(hook.address() + 0x142);
-
-				L(funcLabel);
-				dq(a_funcAddr);
-			}
-		};
-
-		Patch patch(reinterpret_cast<uintptr_t>(IsPlayerOrPlayerMount));
-		patch.ready();
-
-		REL::safe_fill(hook.address() + 0x13B, 0x90, 7);
-		auto& trampoline = SKSE::GetTrampoline();
-		trampoline.write_branch<6>(hook.address() + 0x13B, trampoline.allocate(patch));
+		// Xbyak-based patching disabled: SKSE Xbyak support is not used in this build.
+		logger::trace("FlashHUDStaminaMountHook skipped (xbyak disabled)");
 	}
 
 	void DamageHook::HandleHealthDamage_Actor(RE::Actor* a_this, RE::Actor* a_attacker, float a_damage)
