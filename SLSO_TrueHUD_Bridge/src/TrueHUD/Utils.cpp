@@ -91,7 +91,7 @@ bool Utils::IsBehindPlayerCamera(const RE::NiPoint3& a_pos)
 		return true;
 	}
 
-	RE::NiPoint3 cameraPosition = playerCamera->pos;
+	RE::NiPoint3 cameraPosition = playerCamera->GetRuntimeData2().pos;
 
 	RE::NiQuaternion cameraRotation{ 1.f, 0.f, 0.f, 0.f };
 	auto cameraState = playerCamera->currentState.get();

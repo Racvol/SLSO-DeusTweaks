@@ -724,7 +724,7 @@ namespace Scaleform
 		if (ammo) {
 			SKYUI_AMMOTYPE subType;
 
-			auto flags = ammo->data.flags;
+			auto flags = ammo->GetRuntimeData().data.flags;
 			if (flags.all(RE::AMMO_DATA::Flag::kNonBolt)) {
 				subType = SKYUI_AMMOTYPE::kArrow;
 			} else {

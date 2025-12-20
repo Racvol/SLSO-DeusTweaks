@@ -22,6 +22,15 @@
 #include "RE/Skyrim.h"
 #include "SKSE/SKSE.h"
 
+#include <cstdint>
+
+#include <string_view>
+#include <memory>
+#include <algorithm>
+
+// Windows API helpers used by some TrueHUD headers (e.g. GetModuleHandle/GetProcAddress)
+#include <Windows.h>
+
 // 4. Логирование
 #include <spdlog/sinks/basic_file_sink.h>
 

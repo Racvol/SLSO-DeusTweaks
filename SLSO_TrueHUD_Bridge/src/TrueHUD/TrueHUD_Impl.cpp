@@ -1,4 +1,5 @@
 #include "Hooks.h"
+#include "ModAPI.h"
 #include "Plugin.h"
 #include "Papyrus.h"
 #include "Settings.h"
