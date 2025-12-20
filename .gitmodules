@@ -2,3 +2,6 @@
 	path = SLSO_TrueHUD_Bridge/extern/CommonLibSSE-NG
 	url = https://github.com/alandtse/CommonLibVR.git
 	branch = ng
+[submodule "SLSO_TrueHUD_Bridge/extern/TrueHUD"]
+	path = SLSO_TrueHUD_Bridge/extern/TrueHUD
+	url = https://github.com/ersh1/TrueHUD
