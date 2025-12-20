@@ -32,8 +32,6 @@ CMakeLists.txt.user
 vcpkg_installed/
 packages/
 
-## CommonLibSSE duplicate in root (if using the subproject copy)
-extern
 
 ## Papyrus / pyro
 *.pex
@@ -60,4 +58,5 @@ desktop.ini
 *.7z
 
 ## Keep native plugin DLLs in SKSE/Plugins
-!SKSE/Plugins/*.dll
+.vs/
+*.dll
