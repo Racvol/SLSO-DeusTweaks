@@ -60,3 +60,4 @@ desktop.ini
 ## Keep native plugin DLLs in SKSE/Plugins
 .vs/
 *.dll
+\nSLSO_TrueHUD_Bridge/extern/TrueHUD/
