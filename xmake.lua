@@ -131,3 +131,67 @@ task("submodules")
     on_run(function ()
         os.exec("git submodule update --init --recursive --force")
     end)
+
+-- 5. Deploy (copy mod files into MO2 mod folder)
+task("deploy")
+    set_category("action")
+    set_menu({usage = "xmake deploy [target]", description = "Deploy mod files to a target mod folder (default MO2 path)"})
+    on_run(function ()
+        import("core.project.config")
+        local target = nil
+        -- Priority: CLI arg > config value > ENV > default
+        if #(_ARGV or {}) > 0 then
+            target = _ARGV[1]
+        else
+            target = config.get("deploy_target") or os.getenv("DEPLOY_TARGET") or "D:/Games/Modding/MO2/mods/SLSO DeusTweaks"
+        end
+
+        print("Deploy target: " .. target)
+
+        local items = { "SKSE", "Scripts", "Interface" }
+        local root = os.projectdir()
+
+        -- Ensure target exists
+        if not os.isdir(target) then
+            print("Creating target folder: " .. target)
+            os.mkdir(target)
+        end
+
+        -- Remove existing folders/files
+        for _, item in ipairs(items) do
+            local dst = path.join(target, item)
+            if os.exists(dst) then
+                print("Removing existing: " .. dst)
+                os.rm(dst)
+            end
+        end
+
+        -- Remove SLSO.esp if exists
+        local esp_dst = path.join(target, "SLSO.esp")
+        if os.exists(esp_dst) then
+            print("Removing existing: " .. esp_dst)
+            os.rm(esp_dst)
+        end
+
+        -- Copy items
+        for _, item in ipairs(items) do
+            local src = path.absolute(item)
+            if not os.exists(src) then
+                print("Warning: source not found, skipping: " .. src)
+            else
+                print("Copying: " .. src .. " -> " .. path.join(target, item))
+                os.cp(src, target)
+            end
+        end
+
+        -- Copy esp
+        local esp_src = path.absolute("SLSO.esp")
+        if os.exists(esp_src) then
+            print("Copying: " .. esp_src .. " -> " .. esp_dst)
+            os.cp(esp_src, esp_dst)
+        else
+            print("Warning: SLSO.esp not found in project root: " .. esp_src)
+        end
+
+        print("Deploy finished.")
+    end)

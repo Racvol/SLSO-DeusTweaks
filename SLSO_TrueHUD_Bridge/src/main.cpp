@@ -5,12 +5,18 @@
 #include <shared_mutex>
 #include <unordered_map>
 #include <deque>
+#include <chrono>
+#include <algorithm>
 
-// Теперь подключаем сам API
+
+#include <filesystem>
+#include <Windows.h>
+#include <SimpleIni.h>
+
+
 #include "TrueHUDAPI.h"
 
-// We store native handle values (uint32) in the unordered_map to avoid
-// requiring std::hash specializations for CommonLibSSE handle types.
+
 
 // Глобальные переменные
 static TRUEHUD_API::IVTrueHUD4* g_trueHUD = nullptr;
@@ -127,6 +133,13 @@ namespace SLSO_Bridge {
 void InitializeMessaging() {
     auto* messaging = SKSE::GetMessagingInterface();
     messaging->RegisterListener([](SKSE::MessagingInterface::Message* message) {
+        // Clear stored per-actor data when a game is loaded to avoid leaking data across saves
+        if (message->type == SKSE::MessagingInterface::kPostLoadGame) {
+            std::unique_lock lock(g_lock);
+            g_orgasmMap.clear();
+            logger::info("Orgasm map cleared on game load");
+        }
+
         if (message->type == SKSE::MessagingInterface::kPostLoad) {
             g_trueHUD = reinterpret_cast<TRUEHUD_API::IVTrueHUD4*>(
                 TRUEHUD_API::RequestPluginAPI(TRUEHUD_API::InterfaceVersion::V4)
@@ -155,21 +168,77 @@ void InitializeMessaging() {
         }
     });
 }
+SKSEPluginInfo(
+    REL::Version{ 1, 0, 0, 0 },
+    "SLSO_TrueHUD_Bridge",
+    "DeusTweaks",
+    "",
+    SKSE::StructCompatibility::Independent,
+    {},
+    REL::Version{ 0, 0, 0, 0 }
+);
 
-SKSEPluginLoad(const SKSE::LoadInterface* a_skse) {
+SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
+{
+
     SKSE::Init(a_skse);
     g_pluginHandle = a_skse->GetPluginHandle();
 
-    auto path = logger::log_directory();
+    auto path = SKSE::log::log_directory();
     if (path) {
         *path /= "SLSO_TrueHUD_Bridge.log";
         auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
-        auto log = std::make_shared<spdlog::logger>(std::string("global log"), std::move(sink));
-        log->set_level(spdlog::level::info);
-        spdlog::set_default_logger(std::move(log));
+        auto log = std::make_shared<spdlog::logger>("global log", sink);
+        // Try to read INI located next to the DLL first, fallback to Data\SKSE\Plugins
+        CSimpleIniA ini;
+        ini.SetUnicode();
+        long iniLevel = static_cast<long>(spdlog::level::info);
+        bool loaded = false;
+
+        // 1) Try DLL-adjacent INI: <plugin>.ini
+        wchar_t dllPath[MAX_PATH] = { 0 };
+        HMODULE hModule = GetModuleHandleW(L"SLSO_TrueHUD_Bridge.dll");
+        if (hModule && GetModuleFileNameW(hModule, dllPath, MAX_PATH)) {
+            std::filesystem::path configPath(dllPath);
+            configPath.replace_extension(".ini");
+            if (ini.LoadFile(configPath.string().c_str()) == 0) {
+                iniLevel = ini.GetLongValue("Debug", "LogLevel", iniLevel);
+                logger::info("Config loaded from {}", configPath.string());
+                loaded = true;
+            } else {
+                logger::debug("No DLL-adjacent INI at {}", configPath.string());
+            }
+        }
+
+        // 2) Fallback to Data\SKSE\Plugins\SLSO_TrueHUD_Bridge.ini
+        if (!loaded) {
+            std::filesystem::path dataPath = std::filesystem::path("Data") / "SKSE" / "Plugins" / "SLSO_TrueHUD_Bridge.ini";
+            if (ini.LoadFile(dataPath.string().c_str()) == 0) {
+                iniLevel = ini.GetLongValue("Debug", "LogLevel", iniLevel);
+                logger::info("Config loaded from {}", dataPath.string());
+                loaded = true;
+            } else {
+                logger::debug("No fallback INI at {}", dataPath.string());
+            }
+        }
+
+        // Clamp to valid spdlog levels (0..6)
+        if (iniLevel < static_cast<long>(spdlog::level::trace)) iniLevel = static_cast<long>(spdlog::level::trace);
+        if (iniLevel > static_cast<long>(spdlog::level::critical)) iniLevel = static_cast<long>(spdlog::level::critical);
+        auto level = static_cast<spdlog::level::level_enum>(iniLevel);
+        log->set_level(level);
+        log->flush_on(level);
+        spdlog::set_default_logger(log);
+        spdlog::set_pattern("[%T.%e] [%=5t] [%L] %v");
+        spdlog::flush_every(std::chrono::seconds(5));
     }
-    
+
     InitializeMessaging();
-    SKSE::GetPapyrusInterface()->Register(SLSO_Bridge::RegisterFuncs);
+    
+    auto papyrus = SKSE::GetPapyrusInterface();
+    if (papyrus) {
+        papyrus->Register(SLSO_Bridge::RegisterFuncs);
+    }
+
     return true;
 }

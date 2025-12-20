@@ -8,6 +8,8 @@ option("build_tests")
 option_end()
 
 includes("extern/CommonLibSSE-NG")
+-- Add SimpleIni as a dependency via xmake package manager
+add_requires("simpleini")
 
 target("SLSO_TrueHUD_Bridge")
     set_kind("shared")
@@ -15,6 +17,8 @@ target("SLSO_TrueHUD_Bridge")
     add_files("src/**.cpp")
     add_includedirs("include", "extern/CommonLibSSE-NG/include", {public = true})
     add_deps("commonlibsse-ng")
+    -- Link the simpleini package (header-only)
+    add_packages("simpleini")
     add_syslinks("Advapi32", "bcrypt", "D3D11", "d3dcompiler", "Dbghelp", "DXGI", "Ole32", "Version")
     add_defines("ENABLE_SKYRIM_AE=1", "ENABLE_SKYRIM_SE=1")
     set_filename("SLSO_TrueHUD_Bridge.dll")
