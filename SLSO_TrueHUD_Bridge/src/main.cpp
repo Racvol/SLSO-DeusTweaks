@@ -16,6 +16,9 @@
 
 #include "TrueHUDAPI.h"
 
+// Forward declaration for merged TrueHUD init
+extern "C" bool TrueHUD_Initialize();
+
 
 
 // Глобальные переменные
@@ -183,6 +186,11 @@ SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
 
     SKSE::Init(a_skse);
     g_pluginHandle = a_skse->GetPluginHandle();
+
+    // Initialize merged TrueHUD subsystem
+    if (!TrueHUD_Initialize()) {
+        logger::warn("TrueHUD_Initialize failed or returned false");
+    }
 
     auto path = SKSE::log::log_directory();
     if (path) {
